@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Help-Seeker Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; margin: 0; }
+    input, textarea, button, select { margin: 5px 0; padding: 8px; width: 300px; }
+    h1,h2,h3 { margin-top:0; }
+    header { display:flex; justify-content:space-between; align-items:center; padding-bottom:10px; border-bottom:1px solid #ccc;}
+    main { max-width:900px; margin:auto; }
+    section.card { background:#f9f9f9; padding:15px; margin-bottom:20px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);}
+    label { display:block; margin-top:10px; }
+    #map { height:400px; width:100%; margin-top:10px; border:1px solid #ccc; border-radius:6px;}
+    button.emergency { background:#d9534f; color:white; border:none; padding:10px 20px; cursor:pointer; border-radius:4px;}
+    button.emergency:hover { background:#c9302c; }
+    .faq-question { cursor:pointer; color:#0078A8; margin:5px 0;}
+    .faq-answer { display:none; margin:5px 0 15px 10px; color:#333; }
+    .timer { font-size:0.9em; color:red; margin-left:5px; }
+    @media(max-width:600px){ input,textarea,button,select{width:100%;} }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Help-Seeker Dashboard</h1>
+    <a class="back-btn" id="logoutBtn">⬅ Logout</a>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>➕ Add New Request</h2>
+      <label for="reqTitle">Select Sector:</label>
+      <select id="reqTitle" onchange="showDescription()">
+        <option value="">--Select Sector--</option>
+        <option value="Health">Health</option>
+        <option value="Education">Education</option>
+        <option value="Food">Food</option>
+        <option value="Disaster Management">Disaster Management</option>
+        <option value="Clothing">Clothing</option>
+        <option value="Workshops">Workshops</option>
+        <option value="Shelter">Shelter</option>
+        <option value="Employment">Employment</option>
+        <option value="Livelihood">Livelihood</option>
+        <option value="Hygiene">Hygiene</option>
+        <option value="Legal">Legal</option>
+      </select>
+      <div id="descriptionDiv" style="display:none;">
+        <label for="reqDetails">Describe your need in this sector:</label>
+        <textarea id="reqDetails" placeholder="Describe your request"></textarea>
+        <label><input type="checkbox" id="emergencyCheckbox"> Mark as Emergency</label>
+      </div>
+      <button onclick="submitRequest()">Submit Request</button>
+      <h3>Preview Location</h3>
+      <div id="map"></div>
+    </section>
+
+    <section class="card">
+      <h2>📌 Request Live Status</h2>
+      <div id="liveStatus">No active requests</div>
+    </section>
+
+    <section class="card">
+      <h2>📖 Past Request History</h2>
+      <div id="pastRequests">No past requests yet</div>
+    </section>
+
+    <section class="card">
+      <h2>💬 Feedback & Rating</h2>
+      <label for="donorSelect">Select Volunteer:</label>
+      <select id="donorSelect">
+        <option value="">-- Select Volunteer --</option>
+      </select>
+      <label>Rating:</label>
+      <select id="ratingSelect">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+      <textarea id="feedbackText" placeholder="Write feedback..."></textarea>
+      <button onclick="submitFeedback()">Submit Feedback</button>
+    </section>
+
+    <section class="card">
+      <h2>🚨 Emergency Request</h2>
+      <button class="emergency" onclick="sendEmergency()">Send Emergency Request</button>
+    </section>
+
+    <section class="card">
+      <h2>🤖 FAQ / Chatbot</h2>
+      <label for="faqLang">Choose Language:</label>
+      <select id="faqLang">
+        <option value="english">English</option>
+        <option value="hindi">Hindi</option>
+        <option value="telugu">Telugu</option>
+        <option value="marathi">Marathi</option>
+        <option value="tamil">Tamil</option>
+      </select>
+      <div id="faqContainer"></div>
+    </section>
+
+    <section class="card">
+      <h2>🗓 Integrated Calendar</h2>
+      <div id="helpCalendar"></div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script>
+    const user=JSON.parse(sessionStorage.getItem("currentUser"))||{name:"TestUser",role:"help"};
+    if(!user||user.role!=="help") window.location.href="login.html";
+
+    // Map
+    let map,userMarker=null,currentLat=null,currentLon=null;
+    function initMap(lat,lon){
+      map=L.map('map').setView([lat,lon],16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
+      userMarker=L.marker([lat,lon]).addTo(map).bindPopup("Your location").openPopup();
+    }
+    navigator.geolocation.getCurrentPosition(pos=>{
+      currentLat=pos.coords.latitude; currentLon=pos.coords.longitude; initMap(currentLat,currentLon);
+    },()=>{ currentLat=12.9939; currentLon=80.2333; initMap(currentLat,currentLon); });
+
+    function showDescription(){ document.getElementById("descriptionDiv").style.display=document.getElementById("reqTitle").value?"block":"none"; }
+
+    function submitRequest(){
+      const title=document.getElementById("reqTitle").value;
+      const details=document.getElementById("reqDetails").value.trim();
+      const isEmergency=document.getElementById("emergencyCheckbox").checked;
+      if(!title||!details){ alert("Select category and describe request"); return; }
+      const requests=JSON.parse(localStorage.getItem("requests"))||[];
+      requests.push({id:Date.now(),title,details,lat:currentLat,lon:currentLon,by:user.name,status:"Pending",emergency:isEmergency,timestamp:Date.now()});
+      localStorage.setItem("requests",JSON.stringify(requests));
+      document.getElementById("reqTitle").value="";
+      document.getElementById("reqDetails").value="";
+      document.getElementById("descriptionDiv").style.display="none";
+      document.getElementById("emergencyCheckbox").checked=false;
+      renderLiveRequests();
+    }
+
+    function renderLiveRequests(){
+      let requests=JSON.parse(localStorage.getItem("requests"))||[];
+      requests=requests.filter(r=>r.by===user.name && r.status!=="Completed");
+      const container=document.getElementById("liveStatus");
+      if(requests.length===0){ container.innerHTML="No active requests"; return; }
+      container.innerHTML=requests.map(r=>{
+        let timerHTML="";
+        if(!r.emergency){
+          const diff=24*60*60*1000-(Date.now()-r.timestamp);
+          if(diff>0){
+            const hrs=Math.floor(diff/3600000),mins=Math.floor((diff%3600000)/60000),secs=Math.floor((diff%60000)/1000);
+            timerHTML=`<span class="timer">${hrs}h ${mins}m ${secs}s left</span>`;
+          } else timerHTML=`<span class="timer">Expired</span>`;
+        }
+        return `<div>
+          <strong>${r.title}</strong> ${r.emergency?'<span style="color:red;">⛔</span>':''}<br>
+          ${r.details}<br>Status: <em>${r.status}</em> ${timerHTML}<br>
+          ${r.status!=="Completed"?`<button onclick="markDone(${r.id})">Mark as Done</button>`:""}
+        </div><hr/>`;
+      }).join("");
+    }
+
+    function renderPastRequests(){
+      const past=JSON.parse(localStorage.getItem("pastRequests"))||[];
+      const container=document.getElementById("pastRequests");
+      if(past.length===0){ container.innerHTML="No past requests yet"; return; }
+      container.innerHTML=past.map(r=>`<div><strong>${r.title}</strong> by ${r.volunteer||'N/A'}<br>${r.details}<br>Status: <em>${r.status}</em></div>`).join("");
+    }
+
+    function markDone(id){
+      const requests=JSON.parse(localStorage.getItem("requests"))||[];
+      const past=JSON.parse(localStorage.getItem("pastRequests"))||[];
+      const idx=requests.findIndex(r=>r.id===id);
+      if(idx!==-1){
+        requests[idx].status="Completed";
+        past.push(requests[idx]);
+        localStorage.setItem("requests",JSON.stringify(requests));
+        localStorage.setItem("pastRequests",JSON.stringify(past));
+        renderLiveRequests();
+        renderPastRequests();
+        alert("Task completed! Provide feedback below.");
+        updateVolunteerDropdown();
+      }
+    }
+
+    function submitFeedback(){
+      const volunteer=document.getElementById("donorSelect").value;
+      const feedback=document.getElementById("feedbackText").value.trim();
+      const rating=parseInt(document.getElementById("ratingSelect").value);
+      if(!volunteer||!feedback){ alert("Select volunteer and provide feedback"); return; }
+      const requests=JSON.parse(localStorage.getItem("requests"))||[];
+      const idx=requests.findIndex(r=>r.volunteer===volunteer && r.status==="Completed");
+      if(idx!==-1){
+        requests[idx].feedback=feedback;
+        requests[idx].rating=rating;
+        localStorage.setItem("requests",JSON.stringify(requests));
+        alert("Feedback submitted!");
+        document.getElementById("feedbackText").value="";
+        renderPastRequests();
+      }
+    }
+
+    function sendEmergency(){ alert("Emergency request sent!"); }
+
+    function updateVolunteerDropdown(){
+      const volunteers=[...new Set(JSON.parse(localStorage.getItem("requests")||[]).filter(r=>r.status==="Completed" && r.volunteer).map(r=>r.volunteer))];
+      const sel=document.getElementById("donorSelect");
+      sel.innerHTML=`<option value="">-- Select Volunteer --</option>`+volunteers.map(v=>`<option value="${v}">${v}</option>`).join("");
+    }
+
+    // Calendar
+    const calendar=new FullCalendar.Calendar(document.getElementById("helpCalendar"),{initialView:"dayGridMonth"});
+    calendar.render();
+
+    // Chatbot FAQs
+    const faqs={
+      english:[
+        {q:"What is this platform?",a:"A place to get help from volunteers."},
+        {q:"How do I submit a request?",a:"Select sector, describe need, submit."},
+        {q:"Can I see volunteer location?",a:"Yes, volunteers can see your location."},
+        {q:"How do I give feedback?",a:"Select volunteer and write feedback below."},
+        {q:"What if it's an emergency?",a:"Use emergency request button to alert volunteers immediately."}
+      ],
+      hindi:[
+        {q:"यह प्लेटफ़ॉर्म क्या है?",a:"स्वयंसेवकों से मदद पाने का स्थान।"},
+        {q:"मैं अनुरोध कैसे सबमिट करूँ?",a:"क्षेत्र चुनें, विवरण लिखें और सबमिट करें।"},
+        {q:"क्या मैं स्वयंसेवक का स्थान देख सकता हूँ?",a:"हाँ, स्वयंसेवक आपका स्थान देख सकते हैं।"},
+        {q:"मैं फीडबैक कैसे दूँ?",a:"स्वयंसेवक चुनें और नीचे फीडबैक लिखें।"},
+        {q:"आपात स्थिति में क्या करें?",a:"आपात स्थिति बटन का उपयोग करके स्वयंसेवकों को तुरंत सूचित करें।"}
+      ],
+      telugu:[
+        {q:"ఈ ప్లాట్‌ఫారం ఏమిటి?",a:"సేవాకారుల నుండి సహాయం పొందడానికి స్థలం."},
+        {q:"అనురోధం ఎలా సమర్పించాలి?",a:"విభాగం ఎంచుకోండి, వివరించండి, సమర్పించండి."},
+        {q:"నేను సేవాకారి స్థానం చూడగలనా?",a:"అవును, సేవాకారులు మీ స్థానం చూడగలరు."},
+        {q:"ఫీడ్బ్యాక్ ఎలా ఇవ్వాలి?",a:"సేవాకారిని ఎంచుకోండి, ఫీడ్బ్యాక్ వ్రాయండి."},
+        {q:"తక్షణ సహాయం అవసరమైతే?",a:"ఎమర్జెన్సీ బటన్ ఉపయోగించండి."}
+      ],
+      marathi:[
+        {q:"हे प्लॅटफॉर्म काय आहे?",a:"स्वयंसेवकांकडून मदत मिळवण्याचे ठिकाण."},
+        {q:"मी विनंती कशी सबमिट करु?",a:"क्षेत्र निवडा, तपशील द्या, सबमिट करा."},
+        {q:"मी स्वयंसेवकाची जागा पाहू शकतो?",a:"हो, स्वयंसेवक तुमची जागा पाहू शकतात."},
+        {q:"मी फीडबॅक कसा द्यावा?",a:"स्वयंसेवक निवडा आणि फीडबॅक द्या."},
+        {q:"आपत्कालीन स्थितीत काय करावे?",a:"आपत्कालीन बटण वापरून स्वयंसेवकांना त्वरित सूचित करा."}
+      ],
+      tamil:[
+        {q:"இந்த தளம் என்ன?",a:"தன்னார்வலர்களிடமிருந்து உதவி பெறும் இடம்."},
+        {q:"நான் கோரிக்கையை எப்படிச் சமர்ப்பிப்பேன்?",a:"துறையை தேர்வு செய்து விவரிக்கவும், சமர்ப்பிக்கவும்."},
+        {q:"நான் தன்னார்வலரின் இடத்தை பார்க்க முடியுமா?",a:"ஆம், தன்னார்வலர்கள் உங்கள் இடத்தை பார்க்க முடியும்."},
+        {q:"கருத்து எப்படிச் செய்யலாம்?",a:"தன்னார்வலரை தேர்வு செய்து கருத்து எழுதவும்."},
+        {q:"அவசரத்தில் என்ன செய்ய வேண்டும்?",a:"அவசர பொத்தானை அழுத்தி உடனடி அறிவிப்பு அனுப்பவும்."}
+      ]
+    };
+
+    document.getElementById("faqLang").addEventListener("change",renderFAQ);
+    function renderFAQ(){
+      const lang=document.getElementById("faqLang").value;
+      const container=document.getElementById("faqContainer");
+      container.innerHTML=faqs[lang].map(f=>`<div class="faq-question">${f.q}</div><div class="faq-answer">${f.a}</div>`).join("");
+      document.querySelectorAll(".faq-question").forEach(q=>{
+        q.addEventListener("click",()=>{ q.nextElementSibling.style.display=q.nextElementSibling.style.display==="block"?"none":"block"; });
+      });
+    }
+    renderFAQ();
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click",()=>{ sessionStorage.clear(); window.location.href="login.html"; });
+
+    // Initial load
+    renderLiveRequests();
+    renderPastRequests();
+    updateVolunteerDropdown();
+
+    window.addEventListener("storage",()=>{
+      renderLiveRequests();
+      renderPastRequests();
+      updateVolunteerDropdown();
+    });
+
+    setInterval(renderLiveRequests,1000); // update timers
+  </script>
+</body>
+</html>
+ 

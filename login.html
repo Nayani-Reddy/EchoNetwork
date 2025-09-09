@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<header><h1>Login</h1></header>
+<main>
+  <form id="loginForm" class="card">
+    <label>Username</label> 
+    <input id="liName" required placeholder="Enter your username" title="Username" />
+
+    <label>Password</label>
+    <input id="liPass" type="password" required placeholder="Enter your password" title="Password" />
+
+    <button type="submit">Login</button>
+    <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
+  </form>
+</main>
+
+<script>
+document.getElementById("loginForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const name = document.getElementById("liName").value.trim();
+  const pass = document.getElementById("liPass").value;
+
+  let users = JSON.parse(localStorage.getItem("users")) || [];
+  let user = users.find(u => u.name === name);
+
+  if (!user) {
+    alert("User not found. Please sign up first.");
+    return;
+  }
+
+  if (user.pass !== pass) {
+    alert("Incorrect password. Try again.");
+    return;
+  }
+
+  sessionStorage.setItem("currentUser", JSON.stringify(user));
+
+  if (user.role === "help") {
+    window.location.href = "help.html";
+  } else if (user.role === "volunteer") {
+    window.location.href = "volunteer.html";
+  } else {
+    alert("Invalid user role.");
+  }
+});
+</script>
+</body>
+</html>
+

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Language Preference</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header><h1>Select Your Language Preference</h1></header>
+  <main>
+    <form id="langForm" class="card">
+      <label for="language">Choose Language:</label>
+      <select id="language" required>
+        <option value="">Select Language</option>
+        <option value="hindi">Hindi</option>
+        <option value="english">English</option>
+        <option value="bengali">Bengali</option>
+        <option value="telugu">Telugu</option>
+        <option value="marathi">Marathi</option>
+        <option value="tamil">Tamil</option>
+        <option value="urdu">Urdu</option>
+        <option value="gujarati">Gujarati</option>
+        <option value="kannada">Kannada</option>
+        <option value="odia">Odia</option>
+        <option value="malayalam">Malayalam</option>
+        <option value="punjabi">Punjabi</option>
+        <option value="assamese">Assamese</option>
+        <option value="maithili">Maithili</option>
+        <option value="sanskrit">Sanskrit</option>
+      </select>
+
+      <button type="submit">Submit</button>
+    </form>
+  </main>
+
+  <script>
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
+    if (!currentUser) {
+      alert("Please sign up first.");
+      window.location.href = "signup.html";
+    }
+
+    document.getElementById("langForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const language = document.getElementById("language").value;
+      if (!language) {
+        alert("Please select a language.");
+        return;
+      }
+
+      currentUser.language = language;
+      sessionStorage.setItem("currentUser", JSON.stringify(currentUser));
+
+      // Update language in localStorage users array
+      let users = JSON.parse(localStorage.getItem("users")) || [];
+      users = users.map(u => u.name === currentUser.name ? currentUser : u);
+      localStorage.setItem("users", JSON.stringify(users));
+
+      alert("Language preference saved! Proceed to login.");
+      window.location.href = "login.html";
+    });
+  </script>
+</body>
+</html>

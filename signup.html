@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sign Up</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header><h1>Sign Up</h1></header>
+  <main>
+    <form id="signupForm" class="card">
+      <label>Username</label>
+      <input id="suName" required />
+
+      <label>Password</label>
+      <input id="suPass" type="password" required />
+
+      <label>Aadhaar</label>
+      <input id="suAadhaar" pattern="\d{12}" placeholder="12-digit number" required />
+
+      <label>Email</label>
+      <input id="suEmail" type="email" required />
+
+      <label>Role</label>
+      <select id="suRole" required>
+        <option value="">Select Role</option>
+        <option value="help">Help-Seeker</option>
+        <option value="volunteer">Volunteer</option>
+      </select>
+
+      <button type="submit">Sign Up</button>
+      <p>Already have an account? <a href="login.html">Login here</a></p>
+    </form>
+  </main>
+
+  <script>
+    document.getElementById("signupForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("suName").value.trim();
+      const pass = document.getElementById("suPass").value;
+      const aadhaar = document.getElementById("suAadhaar").value.trim();
+      const email = document.getElementById("suEmail").value.trim();
+      const role = document.getElementById("suRole").value;
+
+      if(!name || !pass || !aadhaar || !email || !role) {
+        alert("Please fill all fields correctly.");
+        return;
+      }
+
+      let users = JSON.parse(localStorage.getItem("users")) || [];
+      if(users.find(u => u.name === name)) {
+        alert("Username already exists.");
+        return;
+      }
+
+      const newUser = { name, pass, aadhaar, email, role };
+      users.push(newUser);
+      localStorage.setItem("users", JSON.stringify(users));
+
+      // Save current user temporarily in sessionStorage
+      sessionStorage.setItem("currentUser", JSON.stringify(newUser));
+
+      // Redirect to language preference page
+      window.location.href = "language.html";
+    });
+  </script>
+</body>
+</html>

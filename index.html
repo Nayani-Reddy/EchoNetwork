@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Eco Network</title>
+  <style>
+    /* Basic Reset and Typography */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #e6f2e6;
+      color: #2d472d;
+      line-height: 1.6;
+    }
+    a {
+      color: #2b6f2b;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background-color: #3b6e3b;
+      padding: 1rem 2rem;
+      color: #eff9efff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    nav a {
+      margin-left: 1.5rem;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    main {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .hero {
+      background: #f4fcf4;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 0 10px rgba(73, 115, 73, 0.3);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .hero h2 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: #4a774a;
+    }
+    section {
+      margin-bottom: 2rem;
+    }
+    section h3 {
+      color: #3b6e3b;
+      border-bottom: 2px solid #4a774a;
+      padding-bottom: 0.5rem;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+      padding: 1rem;
+      transition: box-shadow 0.3s ease;
+    }
+    .card:hover {
+      box-shadow: 0 0 12px rgba(0,0,0,0.2);
+    }
+    .card h4 {
+      margin-top: 0;
+      color: #2a572a;
+    }
+    .card p {
+      font-size: 0.95rem;
+      color: #557355;
+    }
+    footer {
+      background-color: #3b6e3b;
+      color: #e6f2e6;
+      text-align: center;
+      padding: 1rem 0;
+      font-size: 0.9rem;
+    }
+    @media (max-width: 600px) {
+      nav a {
+        margin-left: 1rem;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Eco Network</h1>
+    <nav>
+      <a href="#mission">Mission</a>
+      <a href="#latest-news">Latest News</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+  <main>
+    <section class="hero">
+      <h2>Welcome to Eco Network</h2>
+      <p>Connecting communities for a sustainable future. Join us to make an impact together.</p>
+    </section>
+    <section id="mission">
+      <h3>Our Mission</h3>
+      <p>Eco Network is dedicated to fostering collaboration among local environmental groups, volunteers, and NGOs to create impactful, scalable solutions for ecological conservation, sustainable living, and climate action.</p>
+    </section>
+    <section id="latest-news">
+      <h3>Latest News</h3>
+      <div class="cards">
+        <article class="card">
+          <h4>Community Clean-up Drive</h4>
+          <p>Join our upcoming clean-up event to restore the neighborhood park and promote waste reduction practices.</p>
+          <a href="#">Read More</a>
+        </article>
+        <article class="card">
+          <h4>Tree Plantation Campaign</h4>
+          <p>Our annual tree plantation campaign is back! Volunteers are needed to help plant native trees across the city.</p>
+          <a href="#">Read More</a>
+        </article>
+        <article class="card">
+          <h4>Eco Workshops</h4>
+          <p>Learn sustainable habits at our monthly workshops, including composting, water conservation, and renewable energy.</p>
+          <a href="#">Read More</a>
+        </article>
+      </div>
+    </section>
+    <section id="contact">
+      <h3>Contact Us</h3>
+      <p>Have questions or want to partner with us? Reach out at <a href="mailto:info@econetwork.org">info@econetwork.org</a></p>
+    </section>
+    <a href="login.html">Login</a>
+
+  </main>
+  <footer>
+    &copy; 2025 Eco Network &nbsp;&bull;&nbsp; All rights reserved.
+  </footer>
+</body>
+</html>

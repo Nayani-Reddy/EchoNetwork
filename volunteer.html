@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Volunteer Dashboard</title>
+
+<link rel="stylesheet" href="style.css" />
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+
+<style>
+body { font-family: Arial, sans-serif; padding:20px; margin:0; }
+.card { background:#f9f9f9; padding:15px; margin-bottom:20px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);}
+input, textarea, select, button { margin:5px 0; padding:8px; width:100%; max-width:300px;}
+h1,h2{margin-top:0;}
+.stars{color:gold;}
+@media(max-width:600px){ input,textarea,button,select{ width:100%; } }
+.profile-field{ margin-bottom:10px;}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>Volunteer Dashboard</h1>
+  <a id="logoutBtn">⬅ Logout</a>
+</header>
+
+<main>
+<!-- Profile Section -->
+<section class="card">
+  <h2>👤 My Profile</h2>
+  <div class="profile-field"><label>Name:</label><input type="text" id="profileName"></div>
+  <div class="profile-field"><label>Occupation:</label><input type="text" id="profileOccupation"></div>
+  <div class="profile-field"><label>Mobile:</label><input type="text" id="profileMobile"></div>
+  <div class="profile-field"><label>Email:</label><input type="email" id="profileEmail"></div>
+  <div class="profile-field"><label>DOB:</label><input type="date" id="profileDOB"></div>
+  <div class="profile-field"><label>Location:</label><input type="text" id="profileLocation"></div>
+  <button onclick="saveProfile()">Save Profile</button>
+</section>
+
+<!-- Tasks Near Me -->
+<section class="card">
+  <h2>📍 Tasks Near Me</h2>
+  <div id="tasksNearMe">No active tasks nearby</div>
+</section>
+
+<!-- My Tasks -->
+<section class="card">
+  <h2>📝 My Tasks</h2>
+  <div id="myTasks">No tasks yet</div>
+</section>
+
+<!-- Reviews -->
+<section class="card">
+  <h2>⭐ Reviews & Ratings</h2>
+  <div id="reviews">No reviews yet</div>
+</section>
+
+<!-- Volunteer Calendar -->
+<section class="card">
+  <h2>🗓 Volunteer Event Calendar</h2>
+  <div id="volunteerCalendar"></div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script>
+const user=JSON.parse(sessionStorage.getItem("currentUser"))||{name:"Volunteer",role:"volunteer"};
+if(!user || user.role!=="volunteer") window.location.href="login.html";
+
+// Logout
+document.getElementById("logoutBtn").addEventListener("click",()=>{ sessionStorage.clear(); window.location.href="login.html"; });
+
+// Profile
+function loadProfile(){
+  const profile=JSON.parse(localStorage.getItem("profile_"+user.name))||{};
+  document.getElementById("profileName").value=profile.name||user.name;
+  document.getElementById("profileOccupation").value=profile.occupation||"";
+  document.getElementById("profileMobile").value=profile.mobile||"";
+  document.getElementById("profileEmail").value=profile.email||"";
+  document.getElementById("profileDOB").value=profile.dob||"";
+  document.getElementById("profileLocation").value=profile.location||"";
+}
+function saveProfile(){
+  const profile={
+    name:document.getElementById("profileName").value,
+    occupation:document.getElementById("profileOccupation").value,
+    mobile:document.getElementById("profileMobile").value,
+    email:document.getElementById("profileEmail").value,
+    dob:document.getElementById("profileDOB").value,
+    location:document.getElementById("profileLocation").value
+  };
+  localStorage.setItem("profile_"+user.name, JSON.stringify(profile));
+  alert("Profile saved!");
+}
+
+// Tasks Near Me
+function renderVolunteerRequests(){
+  let allRequests=JSON.parse(localStorage.getItem("requests"))||[];
+  const container=document.getElementById("tasksNearMe");
+  allRequests=allRequests.filter(r=>r.status==="Pending");
+  if(allRequests.length===0){ container.innerHTML="<p>No active tasks nearby</p>"; return; }
+  container.innerHTML=allRequests.map(r=>{
+    return `<div>
+      <strong>${r.title}</strong> ${r.emergency?'<span style="color:red;">⛔</span>':''}<br>
+      ${r.details}<br>
+      <em>By: ${r.by}</em><br>
+      <button onclick="acceptRequest(${r.id})">Accept ✅</button>
+      <button onclick="denyRequest(${r.id})">Deny ❌</button>
+    </div><hr/>`;
+  }).join("");
+}
+
+function acceptRequest(requestId){
+  let allRequests=JSON.parse(localStorage.getItem("requests"))||[];
+  const idx=allRequests.findIndex(r=>r.id===requestId);
+  if(idx!==-1){
+    allRequests[idx].status="Accepted";
+    allRequests[idx].volunteer=user.name;
+    localStorage.setItem("requests",JSON.stringify(allRequests));
+    renderVolunteerRequests();
+    renderMyTasks();
+  }
+}
+
+function denyRequest(requestId){
+  let allRequests=JSON.parse(localStorage.getItem("requests"))||[];
+  const idx=allRequests.findIndex(r=>r.id===requestId);
+  if(idx!==-1){
+    allRequests[idx].status="Denied";
+    allRequests[idx].volunteer=user.name;
+    localStorage.setItem("requests",JSON.stringify(allRequests));
+    renderVolunteerRequests();
+    renderMyTasks();
+  }
+}
+
+// My Tasks
+function renderMyTasks(){
+  const allRequests=JSON.parse(localStorage.getItem("requests"))||[];
+  const myTasks=allRequests.filter(r=>r.volunteer===user.name);
+  const container=document.getElementById("myTasks");
+  if(myTasks.length===0){ container.innerHTML="<p>No tasks yet</p>"; return; }
+  container.innerHTML=myTasks.map(r=>{
+    return `<div>
+      <strong>${r.title}</strong> ${r.emergency?'<span style="color:red;">⛔</span>':''}<br>
+      ${r.details}<br>
+      <em>By: ${r.by}</em><br>
+      Status: <em>${r.status}</em><br>
+      ${r.feedback?`Feedback: ${r.feedback} <span class="stars">${'★'.repeat(r.rating)}</span>`:""}
+    </div><hr/>`;
+  }).join("");
+}
+
+// Reviews
+function renderReviews(){
+  const allRequests=JSON.parse(localStorage.getItem("requests"))||[];
+  const reviews=allRequests.filter(r=>r.feedback);
+  const container=document.getElementById("reviews");
+  if(reviews.length===0){ container.innerHTML="No reviews yet"; return; }
+  container.innerHTML=reviews.map(r=>`<div>
+    <strong>${r.title}</strong> by ${r.by}<br>
+    Feedback: ${r.feedback}<br>
+    Rating: <span class="stars">${'★'.repeat(r.rating)}</span>
+  </div><hr/>`).join("");
+}
+
+// Calendar
+window.addEventListener("load",()=>{
+  loadProfile();
+  renderVolunteerRequests();
+  renderMyTasks();
+  renderReviews();
+
+  const cal=document.getElementById("volunteerCalendar");
+  const calendar=new FullCalendar.Calendar(cal,{
+    initialView:"dayGridMonth",
+    headerToolbar:{ left:"prev,next today", center:"title", right:"dayGridMonth,timeGridWeek,timeGridDay"},
+    events:[
+      { title:"Health Camp", start:"2025-09-12" },
+      { title:"Food Distribution", start:"2025-09-18" },
+      { title:"Donation Drive", start:"2025-09-15" }
+    ]
+  });
+  calendar.render();
+});
+
+// Sync real-time updates
+window.addEventListener("storage",()=>{
+  renderVolunteerRequests();
+  renderMyTasks();
+  renderReviews();
+});
+
+// Update every 5 seconds for real-time feel
+setInterval(()=>{
+  renderVolunteerRequests();
+  renderMyTasks();
+  renderReviews();
+},5000);
+</script>
+</body>
+</html>
